@@ -6,10 +6,35 @@ The decision policy module implements the three-way triage system.
 
 ## TriagePolicy
 
-::: src.decision_policy.triage.TriagePolicy
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+class TriagePolicy:
+    """
+    Three-way triage decision policy.
+    
+    Attributes:
+        threshold_negative: Probability ceiling for PASS decisions
+        threshold_positive: Probability floor for FLAG decisions
+    """
+    
+    def __init__(
+        self,
+        threshold_negative: float = 0.15,
+        threshold_positive: float = 0.60
+    ):
+        ...
+    
+    def decide(self, probabilities: np.ndarray) -> pd.Series:
+        """Apply triage thresholds to probability array."""
+        ...
+    
+    def decide_single(self, probability: float) -> str:
+        """Apply triage to single probability value."""
+        ...
+    
+    def get_statistics(self, decisions: pd.Series) -> dict:
+        """Compute pass/review/flag rates."""
+        ...
+```
 
 ---
 

@@ -164,7 +164,7 @@ Sentinel generates explainability artifacts that **can support compliance workfl
 - **Local explanations** (SHAP waterfall): Per-case audit markdown
 - **Calibration curves**: Model health monitoring
 
-![SHAP Summary](figures/shap_summary.png)
+![SHAP Summary](../figures/shap_summary.png)
 
 ---
 

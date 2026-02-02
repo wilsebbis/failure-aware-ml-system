@@ -82,14 +82,14 @@ flowchart TD
     subgraph Model["Inference"]
         C --> D[XGBoost]
         D --> E[Isotonic Calibration]
-        E --> F[P(default)]
+        E --> F["P(default)"]
     end
     
     subgraph Policy["Triage"]
         F --> G{Thresholds}
-        G -->|p < 0.15| H[PASS]
-        G -->|0.15–0.60| I[REVIEW]
-        G -->|p ≥ 0.60| J[FLAG]
+        G -->|"p < 0.15"| H[PASS]
+        G -->|"0.15–0.60"| I[REVIEW]
+        G -->|"p >= 0.60"| J[FLAG]
     end
     
     subgraph Audit["Audit"]

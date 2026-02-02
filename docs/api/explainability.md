@@ -6,19 +6,52 @@ SHAP-based global and local explanations for audit workflows.
 
 ## Global Explanations
 
-::: src.explainability.shap_global
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def generate_global_explanations(
+    model,
+    X_sample: pd.DataFrame,
+    output_dir: str = "figures/"
+) -> dict:
+    """
+    Generate SHAP summary and importance plots.
+    
+    Returns:
+        dict with keys: summary_plot, importance_plot, top_features
+    """
+    ...
+```
 
 ---
 
 ## Local Explanations
 
-::: src.explainability.shap_local
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def explain_single_prediction(
+    model,
+    X: pd.DataFrame,
+    instance_idx: int,
+    output_path: str = None
+) -> str:
+    """
+    Generate SHAP waterfall explanation for single case.
+    
+    Returns:
+        Markdown-formatted explanation string
+    """
+    ...
+
+def generate_audit_explanation(
+    shap_values: np.ndarray,
+    X: pd.DataFrame,
+    y_true: pd.Series,
+    y_pred: np.ndarray,
+    y_proba: np.ndarray,
+    expected_value: float,
+    instance_idx: int
+) -> str:
+    """Generate structured audit explanation."""
+    ...
+```
 
 ---
 

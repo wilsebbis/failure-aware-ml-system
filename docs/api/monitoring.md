@@ -6,19 +6,51 @@ Distribution drift detection and confidence collapse monitoring.
 
 ## Drift Detection
 
-::: src.monitoring.drift
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def compute_psi(
+    reference: pd.DataFrame,
+    current: pd.DataFrame,
+    n_bins: int = 10
+) -> dict[str, float]:
+    """
+    Compute Population Stability Index per feature.
+    
+    Returns:
+        dict mapping feature name to PSI score
+    """
+    ...
+
+def detect_drift(
+    psi_scores: dict[str, float],
+    threshold: float = 0.25
+) -> list[str]:
+    """Return list of features with PSI above threshold."""
+    ...
+```
 
 ---
 
 ## Confidence Collapse
 
-::: src.monitoring.confidence_collapse
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def compute_confidence_metrics(
+    probabilities: np.ndarray
+) -> dict:
+    """
+    Compute confidence statistics.
+    
+    Returns:
+        dict with keys: mean, std, entropy, abstention_rate
+    """
+    ...
+
+def detect_collapse(
+    metrics: dict,
+    threshold: float = 0.70
+) -> bool:
+    """Return True if confidence collapse detected."""
+    ...
+```
 
 ---
 

@@ -6,28 +6,64 @@ Metrics calculation, calibration assessment, and threshold optimization.
 
 ## MetricsCalculator
 
-::: src.evaluation.metrics.MetricsCalculator
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+class MetricsCalculator:
+    """Calculate classification metrics with focus on recall."""
+    
+    def compute_all(
+        self, 
+        y_true: np.ndarray, 
+        y_pred: np.ndarray, 
+        y_proba: np.ndarray
+    ) -> dict:
+        """
+        Compute all metrics.
+        
+        Returns:
+            dict with keys: recall, precision, fnr, fpr, ece, auc
+        """
+        ...
+```
 
 ---
 
 ## Calibration Functions
 
-::: src.evaluation.calibration
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def compute_ece(
+    y_true: np.ndarray, 
+    y_proba: np.ndarray, 
+    n_bins: int = 10
+) -> float:
+    """Compute Expected Calibration Error."""
+    ...
+
+def calibration_curve(
+    y_true: np.ndarray, 
+    y_proba: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute calibration curve (fraction of positives per bin)."""
+    ...
+```
 
 ---
 
 ## Threshold Optimization
 
-::: src.evaluation.thresholds
-    options:
-      show_root_heading: true
-      members_order: source
+```python
+def optimize_thresholds(
+    y_val: np.ndarray,
+    proba_val: np.ndarray,
+    target_fnr: float = 0.005
+) -> dict:
+    """
+    Find optimal thresholds for target FNR.
+    
+    Returns:
+        dict with threshold_negative, threshold_positive
+    """
+    ...
+```
 
 ---
 
