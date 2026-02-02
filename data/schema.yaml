@@ -1,0 +1,124 @@
+# Failure-Aware ML System - Data Schema
+# UCI Credit Card Default Dataset
+
+dataset:
+  name: "UCI Credit Card Default"
+  source: "https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients"
+  uci_id: 350
+  description: |
+    This dataset contains information on default payments, demographic factors,
+    credit data, history of payment, and bill statements of credit card clients
+    in Taiwan from April 2005 to September 2005.
+
+target:
+  name: "default"
+  original_name: "default.payment" 
+  type: "binary"
+  positive_class: 1
+  negative_class: 0
+  positive_label: "Default"
+  negative_label: "No Default"
+  class_ratio: "~22% positive (imbalanced)"
+
+features:
+  demographic:
+    - name: "LIMIT_BAL"
+      type: "continuous"
+      description: "Amount of the given credit (NT dollar)"
+      domain_validation: "Should be positive"
+      
+    - name: "SEX"
+      type: "categorical"
+      values: [1, 2]
+      labels: ["Male", "Female"]
+      
+    - name: "EDUCATION"
+      type: "ordinal"
+      values: [1, 2, 3, 4, 5, 6]
+      labels: ["Graduate school", "University", "High school", "Others", "Unknown", "Unknown"]
+      notes: "5 and 6 are undocumented, treat as 'Unknown'"
+      
+    - name: "MARRIAGE"
+      type: "categorical"
+      values: [0, 1, 2, 3]
+      labels: ["Unknown", "Married", "Single", "Others"]
+      
+    - name: "AGE"
+      type: "continuous"
+      description: "Age in years"
+      domain_validation: "Should be between 18 and 100"
+
+  payment_history:
+    description: |
+      PAY_0 to PAY_6: Repayment status from April to September 2005
+      -2: No consumption
+      -1: Paid in full
+       0: Use of revolving credit
+       1: Payment delay for one month
+       2: Payment delay for two months
+       ...
+       9: Payment delay for nine months and above
+    columns:
+      - PAY_0  # September (most recent)
+      - PAY_2
+      - PAY_3
+      - PAY_4
+      - PAY_5
+      - PAY_6  # April (oldest)
+      
+  bill_amounts:
+    description: "Amount of bill statement (NT dollar)"
+    columns:
+      - BILL_AMT1  # September
+      - BILL_AMT2
+      - BILL_AMT3
+      - BILL_AMT4
+      - BILL_AMT5
+      - BILL_AMT6  # April
+      
+  payment_amounts:
+    description: "Amount of previous payment (NT dollar)"
+    columns:
+      - PAY_AMT1  # September
+      - PAY_AMT2
+      - PAY_AMT3
+      - PAY_AMT4
+      - PAY_AMT5
+      - PAY_AMT6  # April
+
+derived_features:
+  - name: "utilization_ratio"
+    formula: "BILL_AMT1 / LIMIT_BAL"
+    description: "Credit utilization ratio (most recent month)"
+    
+  - name: "avg_payment_delay"
+    formula: "mean(PAY_0, PAY_2, ..., PAY_6)"
+    description: "Average payment delay across 6 months"
+    
+  - name: "payment_trend"
+    formula: "PAY_AMT1 - PAY_AMT6"
+    description: "Recent payment minus oldest payment"
+    
+  - name: "max_delay"
+    formula: "max(PAY_0, PAY_2, ..., PAY_6)"
+    description: "Maximum payment delay recorded"
+    
+  - name: "has_severe_delay"
+    formula: "max_delay >= 3"
+    description: "Binary flag for 3+ month delay"
+
+validation_rules:
+  - "LIMIT_BAL > 0"
+  - "AGE >= 18 and AGE <= 100"
+  - "SEX in [1, 2]"
+  - "EDUCATION in [1, 2, 3, 4, 5, 6]"
+  - "MARRIAGE in [0, 1, 2, 3]"
+  - "PAY columns in range [-2, 9]"
+
+preprocessing:
+  missing_values: "No missing values in original dataset"
+  encoding:
+    SEX: "Leave as numeric (binary)"
+    EDUCATION: "One-hot encode after grouping 4,5,6 → 'Other'"
+    MARRIAGE: "One-hot encode after grouping 0,3 → 'Other'"
+  scaling: "StandardScaler for continuous features"
