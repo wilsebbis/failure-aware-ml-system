@@ -1,4 +1,4 @@
-# Sentinel: Asymmetric Risk Triage System
+# Failure-Aware ML System
 
 **Fail-Safe Classification | Human-in-the-Loop | Minimize False Negatives**
 
@@ -6,7 +6,7 @@
 
 ## What Is This?
 
-Sentinel is an **asymmetric risk triage system** for regulated environments. It takes tabular input data and outputs a three-way decision:
+Failure-Aware ML System is an **asymmetric risk triage system** for regulated environments. It takes tabular input data and outputs a three-way decision:
 
 | Decision | Trigger | Outcome |
 |----------|---------|---------|
@@ -72,8 +72,8 @@ Audit Artifact: /outputs/case_12345_explanation.md
 
 ```bash
 # Clone and install
-git clone https://github.com/wilsebbis/sentinel-risk-engine.git
-cd sentinel-risk-engine
+git clone https://github.com/wilsebbis/failure-aware-ml-system.git
+cd failure-aware-ml-system
 uv sync
 
 # Run end-to-end pipeline
@@ -160,7 +160,7 @@ Current thresholds:
 
 ## Explainability & Audit Artifacts
 
-Sentinel generates explainability artifacts that **can support compliance workflows** (GDPR Right to Explanation, FCRA adverse action notices). These are audit aids, not legal compliance by themselves.
+Failure-Aware ML System generates explainability artifacts that **can support compliance workflows** (GDPR Right to Explanation, FCRA adverse action notices). These are audit aids, not legal compliance by themselves.
 
 ### What Gets Generated
 
@@ -207,7 +207,7 @@ flowchart LR
 ## Project Structure
 
 ```
-sentinel-risk-engine/
+failure-aware-ml-system/
 ├── src/
 │   ├── data/           # Loading, preprocessing, splitting
 │   ├── models/         # Logistic, RF, XGBoost

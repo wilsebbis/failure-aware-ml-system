@@ -1,4 +1,4 @@
-# Sentinel: Asymmetric Risk Triage System
+# Failure-Aware ML System
 
 <div align="center">
 
@@ -18,7 +18,7 @@
 
 ## What Is This?
 
-Sentinel is a **high-recall risk scoring engine** for regulated environments. It takes tabular input data and outputs a three-way decision:
+Failure-Aware ML System is a **high-recall risk scoring engine** for regulated environments. It takes tabular input data and outputs a three-way decision:
 
 | Decision | Trigger | Outcome |
 |----------|---------|---------|
@@ -64,8 +64,8 @@ Audit Artifact: /outputs/case_12345_explanation.md
 ### Run It
 
 ```bash
-git clone https://github.com/wilsebbis/sentinel-risk-engine.git
-cd sentinel-risk-engine
+git clone https://github.com/wilsebbis/failure-aware-ml-system.git
+cd failure-aware-ml-system
 uv sync
 uv run python -m src.main
 ```
@@ -133,7 +133,7 @@ The model struggled to cleanly separate middle-risk cases (common with this data
 
 ## Explainability
 
-Sentinel generates explainability artifacts that **can support compliance workflows** (GDPR, FCRA). These are audit aids, not legal compliance by themselves.
+Failure-Aware ML System generates explainability artifacts that **can support compliance workflows** (GDPR, FCRA). These are audit aids, not legal compliance by themselves.
 
 ![SHAP Summary](figures/shap_summary.png)
 
@@ -158,7 +158,7 @@ See [Generating Explanations](docs/guides/explanations.md) for details.
 ## Project Structure
 
 ```
-sentinel-risk-engine/
+failure-aware-ml-system/
 ├── src/                    # Source code
 │   ├── data/               # Loading, preprocessing
 │   ├── models/             # Logistic, RF, XGBoost

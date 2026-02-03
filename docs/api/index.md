@@ -1,6 +1,6 @@
 # API Reference
 
-This section documents the public API for Sentinel's major modules.
+This section documents the public API for Failure-Aware ML System's major modules.
 
 ---
 

@@ -8,7 +8,7 @@ This page provides a deep dive into the system's design decisions.
 
 ### Fail Loudly, Not Quietly
 
-The worst outcome in high-stakes classification is a **silent false negative**—a risky case that slips through undetected. Sentinel is designed to:
+The worst outcome in high-stakes classification is a **silent false negative**—a risky case that slips through undetected. Failure-Aware ML System is designed to:
 
 1. **Maximize recall** at the expense of precision
 2. **Route uncertainty to humans** rather than guessing
@@ -112,7 +112,7 @@ column_mapping = {
 
 ### 3. Three-Way vs. Binary Decision
 
-Traditional binary classifiers force a decision. Sentinel introduces an **abstention region** where the model admits uncertainty and defers to humans.
+Traditional binary classifiers force a decision. Failure-Aware ML System introduces an **abstention region** where the model admits uncertainty and defers to humans.
 
 ---
 

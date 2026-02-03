@@ -1,9 +1,9 @@
-site_name: Sentinel Risk Engine
+site_name: Failure-Aware ML System
 site_description: High-Recall Risk Assessment System for Regulated Environments
 site_url: https://wilsebbis.github.io/failure-aware-ml-system
 
-repo_name: sentinel-risk-engine
-repo_url: https://github.com/wilsebbis/sentinel-risk-engine
+repo_name: failure-aware-ml-system
+repo_url: https://github.com/wilsebbis/failure-aware-ml-system
 
 theme:
   name: material

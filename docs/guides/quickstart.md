@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get Sentinel running in under 5 minutes.
+Get Failure-Aware ML System running in under 5 minutes.
 
 ---
 
@@ -15,8 +15,8 @@ Get Sentinel running in under 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/wilsebbis/sentinel-risk-engine.git
-cd sentinel-risk-engine
+git clone https://github.com/wilsebbis/failure-aware-ml-system.git
+cd failure-aware-ml-system
 
 # Install dependencies
 uv sync

@@ -1,10 +1,10 @@
-# Model Card: Sentinel Risk Engine
+# Model Card: Failure-Aware ML System
 
 ## Model Details
 
 | Field | Value |
 |-------|-------|
-| **Model Name** | Sentinel Default Risk Classifier |
+| **Model Name** | Failure-Aware ML System |
 | **Version** | 1.0.0 |
 | **Type** | XGBoost Gradient Boosted Trees (calibrated) |
 | **Framework** | scikit-learn 1.8+, XGBoost 3.0+ |
