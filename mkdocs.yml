@@ -1,9 +1,9 @@
 site_name: Sentinel Risk Engine
 site_description: High-Recall Risk Assessment System for Regulated Environments
-site_url: https://yourusername.github.io/sentinel-risk-engine
+site_url: https://wilsebbis.github.io/sentinel-risk-engine
 
 repo_name: sentinel-risk-engine
-repo_url: https://github.com/yourusername/sentinel-risk-engine
+repo_url: https://github.com/wilsebbis/sentinel-risk-engine
 
 theme:
   name: material
@@ -72,4 +72,4 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/yourusername
+      link: https://github.com/wilsebbis

@@ -15,7 +15,7 @@ Get Sentinel running in under 5 minutes.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sentinel-risk-engine.git
+git clone https://github.com/wilsebbis/sentinel-risk-engine.git
 cd sentinel-risk-engine
 
 # Install dependencies
