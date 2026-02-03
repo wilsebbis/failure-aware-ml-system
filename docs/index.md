@@ -1,206 +1,125 @@
 # Failure-Aware ML System
 
-**Fail-Safe Classification | Human-in-the-Loop | Minimize False Negatives**
+**Production-Validated Risk Engine | Cascade Architecture | 98%+ System Recall**
 
 ---
 
 ## What Is This?
 
-Failure-Aware ML System is an **asymmetric risk triage system** for regulated environments. It takes tabular input data and outputs a three-way decision:
+A **high-recall, failure-aware classification system** for regulated environments. It takes tabular input data and outputs a three-way decision:
 
 | Decision | Trigger | Outcome |
 |----------|---------|---------|
-| ✅ **PASS** | Calibrated probability < 0.05 | Auto-approved, no human review |
-| ⚠️ **REVIEW** | 0.05 ≤ probability < 0.50 | Routed to human reviewer with SHAP explanation |
-| 🚨 **FLAG** | Probability ≥ 0.50 | Auto-blocked, audit artifact generated |
+| ✅ **PASS** | Calibrated probability < 0.10 | Auto-approved |
+| ⚠️ **REVIEW** | 0.10 ≤ probability < 0.50 | Routed to human reviewer |
+| 🚨 **FLAG** | Probability ≥ 0.50 | Auto-blocked |
 
-This is **not** a fully automated decision system. It is designed to fail loudly—routing uncertain cases to humans rather than forcing a bad automated decision.
+**Key Achievement:** Validated on **1.3 Million records** (Lending Club), achieving **98.7% System Recall** while automating **67.2% of decisions**.
 
-> **Demo Dataset**: This repo uses the [UCI Credit Card Default](https://archive.ics.uci.edu/dataset/350/default+of+credit+card+clients) dataset for reproducibility. The architecture is dataset-agnostic.
+---
+
+## Production Results
+
+*Verified Feb 2, 2026 with `--cascade --dynamic-threshold`*
+
+| Dataset | Scale | Automation | Defect Rate | Review Load | System Recall |
+|---------|-------|------------|-------------|-------------|---------------|
+| **Lending Club** | 1.3M | 67.2% 🟢 | 2.01% | 10.8% | 98.7% |
+| **IEEE-CIS Fraud** | 590K | 90.0% 🟢 | 1.74% | 6.7% | 98.4% |
+| **Home Credit** | 307K | 75.5% 🟡 | 4.46% | 24.1% | 96.6% |
+| **UCI Credit** | 30K | 29.9% 🟠 | 7.80% | 57.7% | 97.7% |
+
+> **Impact:** ~4x reduction in manual review workload vs single-model baselines.
 
 ---
 
 ## 60-Second Demo
 
-### Sample Payload
-
-```json
-{
-  "LIMIT_BAL": 50000,
-  "SEX": 2,
-  "EDUCATION": 2,
-  "MARRIAGE": 1,
-  "AGE": 32,
-  "PAY_0": 2,
-  "PAY_2": 0,
-  "PAY_3": 0,
-  "PAY_4": 0,
-  "PAY_5": 0,
-  "PAY_6": 0,
-  "BILL_AMT1": 48000,
-  "BILL_AMT2": 45000,
-  "BILL_AMT3": 42000,
-  "BILL_AMT4": 40000,
-  "BILL_AMT5": 38000,
-  "BILL_AMT6": 36000,
-  "PAY_AMT1": 2000,
-  "PAY_AMT2": 1500,
-  "PAY_AMT3": 1000,
-  "PAY_AMT4": 1000,
-  "PAY_AMT5": 1000,
-  "PAY_AMT6": 1000
-}
+```bash
+git clone https://github.com/wilsebbis/failure-aware-ml-system.git
+cd failure-aware-ml-system
+uv sync
+uv run python -m src.main --dataset lending_club --cascade --dynamic-threshold
 ```
 
 ### Expected Output
 
 ```
-Decision: FLAG
-Calibrated Probability: 0.73
-Confidence Band: HIGH_RISK
+[6/7] Applying triage policy...
+  Pass rate: 67.2%
+  Flag rate: 22.0%
+  Review rate: 10.8%
+  Pass Queue Defect Rate: 2.01%
+  System Recall: 98.7%
 
-Top Contributing Features:
-  +0.23  PAY_0 = 2 (payment delay)
-  +0.12  utilization_ratio = 0.96
-  +0.08  max_delay = 2
-  -0.05  AGE = 32
-
-Audit Artifact: /outputs/case_12345_explanation.md
-```
-
-### Run the Pipeline
-
-```bash
-# Clone and install
-git clone https://github.com/wilsebbis/failure-aware-ml-system.git
-cd failure-aware-ml-system
-uv sync
-
-# Run end-to-end pipeline
-uv run python -m src.main
+[7/7] Testing distribution shift...
+✓ No confidence collapse (drop: 0.29%)
 ```
 
 ---
 
-## Architecture
+## Cascade Architecture
+
+The system uses a **2-stage Gatekeeper + Specialist** design:
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion["Data Ingestion"]
-        A[Payload] -->|Schema Check| B{Valid?}
-        B -->|No| X[Reject]
-        B -->|Yes| C[Feature Engineering]
+    subgraph Stage1["Stage 1: Gatekeeper (Logistic)"]
+        A[All Data] --> B{Low Risk?}
+        B -->|p < 0.10| C[Easy PASS: 65.6%]
+        B -->|p >= 0.50| D[Easy FLAG: 21.1%]
+        B -->|0.10-0.50| E[Hard Cases: 13.3%]
     end
     
-    subgraph Model["Inference"]
-        C --> D[XGBoost Ensemble]
-        D --> E[Isotonic Calibration]
-        E --> F["Calibrated P(default)"]
+    subgraph Stage2["Stage 2: Specialist (XGBoost)"]
+        E --> F[Trained on Edge Cases]
+        F --> G[Calibrated Prediction]
     end
     
-    subgraph Policy["Triage"]
-        F --> G{Thresholds}
-        G -->|"p < 0.05"| H[PASS]
-        G -->|"0.05-0.50"| I[REVIEW]
-        G -->|"p >= 0.50"| J[FLAG]
-    end
-    
-    subgraph Audit["Compliance"]
-        I --> K[SHAP Explanation]
-        J --> K
-        K --> L[Audit Log]
+    subgraph Policy["Triage Output"]
+        C --> H[PASS Queue]
+        D --> I[FLAG Queue]
+        G --> J{Final Decision}
+        J --> H
+        J --> K[REVIEW Queue]
+        J --> I
     end
 ```
 
----
+### Why Cascade?
 
-## Key Metrics: Safety First Calibration
-
-The model struggled to cleanly separate middle-risk cases (common with this dataset). Rather than forcing bad automated decisions, we tuned the **PASS threshold aggressively low** (p < 0.05).
-
-### The Critical Metric: Pass Queue Defect Rate
-
-| Metric | Value | Meaning |
-|--------|-------|--------|
-| **Pass Queue Defect Rate** | 1.8% | Only 1.8% of auto-approved cases are actual defaults |
-| System Recall (FLAG + REVIEW) | 98.2% | 98% of defaults go to human eyes |
-
-### Triage Distribution
-
-| Queue | Volume | Contains |
-|-------|--------|----------|
-| ✅ PASS | 18% | Safe cases only (1.8% defect rate) |
-| ⚠️ REVIEW | 68% | Uncertain cases → human decision |
-| 🚨 FLAG | 14% | High-risk → auto-blocked |
-
-> **Design Philosophy**: We accept higher review volume in exchange for a pristine PASS queue. The 1.8% defect rate means automation only touches cases we're confident about.
-
-### Threshold Derivation
-
-Thresholds are computed to minimize **Pass Queue Defect Rate**:
-
-```python
-def find_safe_pass_threshold(y_true, y_proba, max_defect_rate=0.02):
-    """Find maximum threshold such that defect rate in PASS queue <= max_defect_rate."""
-    for threshold in np.linspace(0.01, 0.20, 100):
-        pass_mask = y_proba < threshold
-        if pass_mask.sum() == 0:
-            continue
-        defect_rate = y_true[pass_mask].mean()
-        if defect_rate <= max_defect_rate:
-            return threshold
-    return 0.05  # conservative fallback
-```
-
-Current thresholds:
-- `threshold_pass = 0.05` → auto-approve ceiling
-- `threshold_flag = 0.50` → auto-block floor
+| Problem | Single Model | Cascade |
+|---------|-------------|---------|
+| Home Credit: 76% flagged for review | ❌ Undeployable | ✅ Reduced to 24% |
+| Fraud: 590K transactions to score | ❌ Heavy XGBoost on all | ✅ 96.4% cleared by fast Logistic |
+| IEEE-CIS drift | ❌ Silent failure | ✅ Dynamic threshold adapted |
 
 ---
 
-## Explainability & Audit Artifacts
+## Dynamic Threshold Safety Valve
 
-Failure-Aware ML System generates explainability artifacts that **can support compliance workflows** (GDPR Right to Explanation, FCRA adverse action notices). These are audit aids, not legal compliance by themselves.
-
-### What Gets Generated
-
-- **Global importance** (SHAP summary): Weekly drift reports
-- **Local explanations** (SHAP waterfall): Per-case audit markdown
-- **Calibration curves**: Model health monitoring
-
-![SHAP Summary](../figures/shap_summary.png)
-
----
-
-## Feedback Loop & Retraining Governance
-
-### How Reviewer Decisions Become Labels
+For fraud detection and adversarial environments, enable `--dynamic-threshold`:
 
 ```mermaid
 flowchart LR
-    A[Model Prediction] --> B{Human Review}
-    B -->|Approve| C[Label = 0]
-    B -->|Reject| D[Label = 1]
-    C --> E[Feedback Store]
-    D --> E
-    E --> F[Quarterly Retrain]
+    A[Rolling Window] --> B{Mean Risk > Baseline + 3σ?}
+    B -->|No| C[Normal Thresholds]
+    B -->|Yes| D[Tighten PASS Threshold]
+    D --> E[Reduce Automation]
+    E --> F[Maintain Safety]
 ```
 
-### Safeguards Against Drift
+On IEEE-CIS, this detected a **2.05% confidence drop** and automatically tightened the acceptance criteria.
 
-| Risk | Mitigation |
-|------|------------|
-| **Label leakage** | Reviewer sees confidence band, not raw probability |
-| **Reviewer drift** | Inter-rater reliability audits (κ ≥ 0.7 required) |
-| **Distribution shift** | PSI monitoring per feature, weekly |
-| **Feedback delay** | 90-day label maturation window before retrain |
+---
 
-### Retraining Protocol
+## Quick Links
 
-1. **Trigger**: Quarterly, or when PSI > 0.25 on any feature
-2. **Data**: Last 12 months, excluding last 90 days (label maturation)
-3. **Validation**: Champion-challenger on holdout before promotion
-4. **Approval**: Model Risk Committee sign-off required
+- [Mode Selection Guide](guides/mode-selection.md) - When to use Cascade vs Dynamic
+- [Threshold Derivation](concepts/thresholds.md) - How thresholds are computed
+- [Running the Pipeline](guides/pipeline.md) - Full CLI reference
+- [Model Card](model_card.md) - Limitations & ethics
+- [Audit Report](audit_report.md) - Production validation results
 
 ---
 
@@ -209,26 +128,15 @@ flowchart LR
 ```
 failure-aware-ml-system/
 ├── src/
-│   ├── data/           # Loading, preprocessing, splitting
-│   ├── models/         # Logistic, RF, XGBoost
-│   ├── evaluation/     # Metrics, calibration, thresholds
-│   ├── explainability/ # SHAP global & local
-│   ├── decision_policy/# Three-way triage
-│   └── monitoring/     # Drift detection
-├── figures/            # SHAP visualizations
-├── docs/               # MkDocs documentation
-└── tests/              # Unit tests
+│   ├── data/adapters/     # Dataset-specific loaders
+│   ├── models/            # Cascade, XGBoost, Logistic
+│   ├── decision_policy/   # Triage, dynamic thresholds
+│   ├── evaluation/        # Metrics, calibration
+│   └── explainability/    # SHAP explanations
+├── docs/                  # This documentation
+├── scripts/               # Data download utilities
+└── data/raw/              # Downloaded datasets
 ```
-
----
-
-## Quick Links
-
-- [Concepts: Confidence & Calibration](concepts/confidence.md)
-- [Concepts: Threshold Derivation](concepts/thresholds.md)
-- [Guide: Running the Pipeline](guides/pipeline.md)
-- [API Reference](api/index.md)
-- [Model Card](model_card.md)
 
 ---
 

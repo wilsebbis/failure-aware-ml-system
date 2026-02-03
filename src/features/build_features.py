@@ -2,26 +2,33 @@
 Feature Engineering Module
 
 Builds derived features from raw data.
+Includes ratio-first feature engineering for credit risk.
 """
 
 import pandas as pd
 import numpy as np
 import logging
 
+from .interaction_features import add_ratio_features
+
 logger = logging.getLogger(__name__)
 
 
-def build_features(df: pd.DataFrame) -> pd.DataFrame:
+def build_features(df: pd.DataFrame, dataset: str = "auto") -> pd.DataFrame:
     """
     Build derived features from preprocessed data.
     
     Args:
         df: Preprocessed DataFrame with original features
+        dataset: Dataset name for ratio feature selection
         
     Returns:
         DataFrame with added derived features
     """
     df = df.copy()
+    
+    # Add ratio-first features (most important for credit risk)
+    df = add_ratio_features(df, dataset=dataset)
     
     # Payment history columns
     pay_cols = ["PAY_0", "PAY_2", "PAY_3", "PAY_4", "PAY_5", "PAY_6"]

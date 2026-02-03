@@ -41,6 +41,7 @@ nav:
     - Queue Mechanics: concepts/queue.md
   - Guides:
     - Quick Start: guides/quickstart.md
+    - Mode Selection: guides/mode-selection.md
     - Data Adapters: guides/data_adapters.md
     - Running the Pipeline: guides/pipeline.md
     - Generating Explanations: guides/explanations.md
@@ -51,6 +52,7 @@ nav:
     - Explainability: api/explainability.md
     - Monitoring: api/monitoring.md
   - Model Card: model_card.md
+  - Audit Report: audit_report.md
 
 markdown_extensions:
   - admonition

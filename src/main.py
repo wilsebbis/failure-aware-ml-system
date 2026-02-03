@@ -19,6 +19,7 @@ import logging
 from pathlib import Path
 
 import numpy as np
+np.set_printoptions(threshold=10)  # Suppress massive array output
 import pandas as pd
 import yaml
 
@@ -30,6 +31,8 @@ from src.features.build_features import build_features
 from src.models.baseline_logistic import LogisticBaseline
 from src.models.random_forest import RandomForestModel
 from src.models.xgboost_model import XGBoostModel
+from src.models.cascade_classifier import CascadeClassifier
+from src.decision_policy.dynamic_threshold import DynamicThreshold, AdaptiveTriagePolicy
 from src.evaluation.metrics import compute_all_metrics
 from src.evaluation.thresholds import find_abstention_thresholds
 from src.decision_policy.triage import TriagePolicy
@@ -56,12 +59,18 @@ def load_config(dataset_name: str) -> dict:
         return yaml.safe_load(f)
 
 
-def run_pipeline(dataset_name: str = "uci_credit"):
+def run_pipeline(
+    dataset_name: str = "uci_credit",
+    use_cascade: bool = False,
+    use_dynamic_threshold: bool = False,
+):
     """
     Execute the full ML pipeline with the specified dataset.
     
     Args:
         dataset_name: One of "uci_credit", "home_credit", "ieee_cis", "lending_club"
+        use_cascade: Use two-stage cascade classifier
+        use_dynamic_threshold: Use rolling adaptive thresholds for fraud
     """
     setup_logging()
     logger.info("=" * 60)
@@ -107,8 +116,8 @@ def run_pipeline(dataset_name: str = "uci_credit"):
         df = load_data()
         X, y, _ = preprocess_data(df)
     
-    # Build additional features
-    X_features = build_features(X)
+    # Build additional features (includes ratio-first engineering)
+    X_features = build_features(X, dataset=dataset_name)
     
     # 2. Split data (respecting adapter's strategy)
     logger.info("\n[2/7] Splitting data...")
@@ -136,28 +145,70 @@ def run_pipeline(dataset_name: str = "uci_credit"):
     # 3. Train models
     logger.info("\n[3/7] Training models...")
     
-    # Logistic baseline
-    logistic = LogisticBaseline()
-    logistic.fit(X_train, y_train, calibrate=True, X_cal=X_val, y_cal=y_val)
-    
-    # Random Forest
-    rf = RandomForestModel()
-    rf.fit(X_train, y_train, calibrate=True, X_cal=X_val, y_cal=y_val)
-    
-    # XGBoost
-    xgb = XGBoostModel()
-    xgb.fit(X_train, y_train, X_val=X_val, y_val=y_val, calibrate=True, X_cal=X_val, y_cal=y_val)
+    if use_cascade:
+        # === CASCADE ARCHITECTURE ===
+        # Stage 1 (Gatekeeper): High-recall Logistic Regression
+        # Stage 2 (Specialist): XGBoost trained only on hard cases
+        logger.info("  Using CASCADE ARCHITECTURE (Gatekeeper + Specialist)")
+        
+        # Initialize component models
+        stage1_model = LogisticBaseline()
+        stage2_model = XGBoostModel()
+        
+        # Create cascade - RELAXED Gatekeeper thresholds
+        # Higher pass_threshold = trust Gatekeeper to clear more non-defaults
+        # Target: ~40-50% auto-passed by Stage 1, Specialist focuses on ambiguous cases
+        cascade = CascadeClassifier(
+            stage1_model=stage1_model,
+            stage2_model=stage2_model,
+            stage1_pass_threshold=0.10,   # Trust cases with <10% risk (was 0.03)
+            stage1_flag_threshold=0.50,   # Flag cases with >50% risk (was 0.60)
+            min_hard_cases=500,
+        )
+        
+        # Train the cascade (automatically splits training)
+        cascade.fit(X_train, y_train, X_val, y_val)
+        
+        # Get cascade statistics
+        stats = cascade.get_cascade_stats()
+        if stats["stage1"]:
+            logger.info(f"  Stage 1 filtered {stats['stage1']['easy_pass_pct']:.1f}% as Easy PASS")
+            logger.info(f"  Stage 2 trained on {stats['stage1']['hard_cases']:,} hard cases")
+        
+        # Use cascade as the best model
+        best_model_name = "CascadeClassifier"
+        models = {"CascadeClassifier": cascade}
+        best_recall = 0  # Will be computed in eval
+        
+    else:
+        # === TOURNAMENT MODE (Standard) ===
+        # Train all models, pick best by recall
+        
+        # Logistic baseline
+        logistic = LogisticBaseline()
+        logistic.fit(X_train, y_train, calibrate=True, X_cal=X_val, y_cal=y_val)
+        
+        # Random Forest
+        rf = RandomForestModel()
+        rf.fit(X_train, y_train, calibrate=True, X_cal=X_val, y_cal=y_val)
+        
+        # XGBoost
+        xgb = XGBoostModel()
+        xgb.fit(X_train, y_train, X_val=X_val, y_val=y_val, calibrate=True, X_cal=X_val, y_cal=y_val)
+        
+        models = {"Logistic": logistic, "RandomForest": rf, "XGBoost": xgb}
+        best_model_name = None
+        best_recall = 0
     
     # 4. Evaluate models
     logger.info("\n[4/7] Evaluating models...")
-    models = {"Logistic": logistic, "RandomForest": rf, "XGBoost": xgb}
-    
-    best_model_name = None
-    best_recall = 0
     
     for name, model in models.items():
-        y_proba = model.predict_proba(X_test)[:, 1]
-        y_pred = model.predict(X_test, threshold=0.5)
+        y_proba = model.predict_proba(X_test)
+        # Handle both 1D (cascade) and 2D (sklearn) predict_proba output
+        if len(y_proba.shape) > 1:
+            y_proba = y_proba[:, 1]
+        y_pred = (y_proba >= 0.5).astype(int)
         
         metrics = compute_all_metrics(y_test.values, y_pred, y_proba)
         logger.info(f"\n{name}:")
@@ -172,14 +223,28 @@ def run_pipeline(dataset_name: str = "uci_credit"):
     logger.info(f"\nBest model by recall: {best_model_name}")
     best_model = models[best_model_name]
     
+    # Helper to extract positive class probabilities (handles 1D and 2D)
+    def get_positive_proba(proba):
+        if len(proba.shape) > 1:
+            return proba[:, 1]
+        return proba
+    
     # 5. Optimize thresholds from config
     logger.info("\n[5/7] Optimizing thresholds...")
-    y_proba_test = best_model.predict_proba(X_test)[:, 1]
+    y_proba_test = get_positive_proba(best_model.predict_proba(X_test))
     
     # Use config thresholds or find optimal
     triage_config = config.get("triage", {})
     t_neg = triage_config.get("auto_approve_threshold", 0.05)
     t_pos = triage_config.get("auto_decline_threshold", 0.50)
+    
+    # CRITICAL: Align thresholds with Cascade when in cascade mode
+    # Otherwise we create a "Dead Zone" where Gatekeeper passes but Triage rejects
+    if use_cascade:
+        # Match Triage thresholds to Cascade thresholds
+        t_neg = 0.10  # Trust cases with <10% risk (matches cascade.stage1_pass_threshold)
+        t_pos = 0.50  # Flag cases with >50% risk (matches cascade.stage1_flag_threshold)
+        logger.info(f"  CASCADE MODE: Aligning triage with Gatekeeper thresholds")
     
     logger.info(f"  Pass threshold: p < {t_neg}")
     logger.info(f"  Flag threshold: p >= {t_pos}")
@@ -204,7 +269,7 @@ def run_pipeline(dataset_name: str = "uci_credit"):
     # 7. Test distribution shift
     logger.info("\n[7/7] Testing distribution shift...")
     X_shifted, y_shifted = create_shifted_test_set(X_test, y_test)
-    y_proba_shifted = best_model.predict_proba(X_shifted)[:, 1]
+    y_proba_shifted = get_positive_proba(best_model.predict_proba(X_shifted))
     
     collapse = detect_confidence_collapse(y_proba_test, y_proba_shifted, y_test.values, y_shifted.values)
     
@@ -246,8 +311,24 @@ Available datasets:
         help="Dataset to use (default: uci_credit)"
     )
     
+    parser.add_argument(
+        "--cascade",
+        action="store_true",
+        help="Use two-stage cascade classifier (reduces Review rate)"
+    )
+    
+    parser.add_argument(
+        "--dynamic-threshold",
+        action="store_true",
+        help="Use rolling adaptive thresholds (for fraud detection)"
+    )
+    
     args = parser.parse_args()
-    run_pipeline(dataset_name=args.dataset)
+    run_pipeline(
+        dataset_name=args.dataset,
+        use_cascade=args.cascade,
+        use_dynamic_threshold=args.dynamic_threshold,
+    )
 
 
 if __name__ == "__main__":
