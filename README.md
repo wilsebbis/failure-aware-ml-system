@@ -6,9 +6,9 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://wilsebbis.github.io/sentinel-risk-engine)
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue.svg)](https://wilsebbis.github.io/failure-aware-ml-system)
 
-[**Documentation**](https://wilsebbis.github.io/sentinel-risk-engine) ·
+[**Documentation**](https://wilsebbis.github.io/failure-aware-ml-system) ·
 [Quick Start](#60-second-demo) ·
 [Architecture](#architecture)
 
@@ -143,7 +143,7 @@ See [Generating Explanations](docs/guides/explanations.md) for details.
 
 ## Documentation
 
-📖 **[Full Documentation](https://wilsebbis.github.io/sentinel-risk-engine)**
+📖 **[Full Documentation](https://wilsebbis.github.io/failure-aware-ml-system)**
 
 | Section | Description |
 |---------|-------------|
