@@ -1,0 +1,51 @@
+# Lending Club Configuration
+# Profit-focused dataset demonstrating business value skills
+
+dataset:
+  name: "lending_club"
+  path: "data/raw/lending_club"
+  
+  # Target mode options: "binary" (default), "irr" (profitability), "profitable"
+  target_mode: "irr"
+  
+triage:
+  # For IRR optimization, thresholds are on expected return
+  # These are Z-scores of IRR distribution
+  auto_approve_threshold: -0.5  # Accept loans with IRR > -0.5 std
+  auto_decline_threshold: -1.5  # Decline loans with IRR < -1.5 std
+  
+  # For binary mode
+  binary_thresholds:
+    auto_approve_threshold: 0.05
+    auto_decline_threshold: 0.40
+
+split:
+  # Temporal split on issue_d
+  strategy: "temporal"
+  test_size: 0.2
+  validation_ratio: 0.1
+
+model:
+  # Regression for IRR, classification for binary
+  type: "xgboost_regressor"  # or "xgboost" for binary
+  
+  hyperparameters:
+    n_estimators: 400
+    max_depth: 5
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.6
+    
+  # For portfolio optimization
+  objective: "reg:squarederror"  # or "binary:logistic" for binary
+
+# Portfolio-level settings
+portfolio:
+  # Budget constraint (max loans to approve)
+  max_approval_rate: 0.30
+  
+  # Minimum expected IRR to approve
+  min_expected_irr: 0.03  # 3% annual return
+  
+  # Risk-adjusted return (Sharpe-like)
+  risk_penalty: 0.5

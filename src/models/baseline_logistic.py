@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 import pickle
 from pathlib import Path
 from typing import Optional
@@ -79,15 +81,20 @@ class LogisticBaseline:
         
         logger.info(f"Training Logistic Regression (C={self.C}, penalty={self.penalty})")
         
-        self.model = LogisticRegression(
+        # Use Pipeline with StandardScaler for better convergence
+        logistic = LogisticRegression(
             C=self.C,
-            penalty=self.penalty,
-            solver=logistic_config.solver,
+            l1_ratio=0.0 if self.penalty == "l2" else 1.0,  # l1_ratio=0 is L2, l1_ratio=1 is L1
+            solver="saga" if self.penalty == "l1" else logistic_config.solver,
             max_iter=logistic_config.max_iter,
             class_weight=self.class_weight,
             random_state=self.random_state,
-            n_jobs=-1
         )
+        
+        self.model = Pipeline([
+            ("scaler", StandardScaler()),
+            ("logistic", logistic)
+        ])
         
         self.model.fit(X, y)
         self.is_fitted = True
@@ -157,10 +164,13 @@ class LogisticBaseline:
         if not self.is_fitted:
             raise RuntimeError("Model must be fitted")
         
+        # Access logistic regression inside Pipeline
+        logistic = self.model.named_steps["logistic"]
+        
         coef_df = pd.DataFrame({
             "feature": self.feature_names,
-            "coefficient": self.model.coef_[0],
-            "abs_coefficient": np.abs(self.model.coef_[0])
+            "coefficient": logistic.coef_[0],
+            "abs_coefficient": np.abs(logistic.coef_[0])
         })
         
         coef_df = coef_df.sort_values("abs_coefficient", ascending=False)

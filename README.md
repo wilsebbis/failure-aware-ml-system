@@ -155,20 +155,70 @@ See [Generating Explanations](docs/guides/explanations.md) for details.
 
 ---
 
+## Supported Datasets
+
+The system uses an **Adapter Pattern** to support multiple professional datasets:
+
+| Dataset | Skill Demonstrated | Size |
+|---------|-------------------|------|
+| **UCI Credit** | Baseline (single CSV) | 3MB |
+| **Home Credit** | Data engineering (7-table joins) | 800MB |
+| **IEEE-CIS Fraud** | ML Ops (temporal splits, 339 features) | 1.2GB |
+| **Lending Club** | Business value (IRR optimization) | 1.5GB |
+
+### Download Datasets
+
+```bash
+# Install Kaggle CLI
+pip install kaggle
+
+# Download all datasets
+python scripts/download_data.py --dataset all
+
+# Or download specific dataset
+python scripts/download_data.py --dataset home_credit
+```
+
+### Run with Different Datasets
+
+```bash
+# Default (UCI Credit)
+uv run python -m src.main
+
+# Home Credit (multi-table joins)
+uv run python -m src.main --dataset home_credit
+
+# IEEE-CIS (temporal splits)
+uv run python -m src.main --dataset ieee_cis
+
+# Lending Club (IRR optimization)
+uv run python -m src.main --dataset lending_club
+```
+
+---
+
 ## Project Structure
 
 ```
 failure-aware-ml-system/
-├── src/                    # Source code
-│   ├── data/               # Loading, preprocessing
+├── src/
+│   ├── data/
+│   │   ├── adapters/       # Dataset-specific loaders
+│   │   │   ├── base.py         # Abstract interface
+│   │   │   ├── home_credit.py  # 7-table ETL
+│   │   │   ├── ieee_cis.py     # Temporal splits
+│   │   │   └── lending_club.py # IRR calculation
+│   │   └── factory.py      # Adapter registry
+│   ├── config/             # YAML configs per dataset
 │   ├── models/             # Logistic, RF, XGBoost
 │   ├── evaluation/         # Metrics, calibration
 │   ├── explainability/     # SHAP explanations
 │   ├── decision_policy/    # Three-way triage
 │   └── monitoring/         # Drift detection
+├── scripts/
+│   └── download_data.py    # Kaggle data fetcher
 ├── docs/                   # MkDocs documentation
-├── figures/                # SHAP visualizations
-└── tests/                  # Unit tests
+└── data/raw/               # Downloaded datasets
 ```
 
 ---

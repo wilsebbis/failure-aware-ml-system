@@ -1,0 +1,47 @@
+# Home Credit Default Risk Configuration
+# Multi-table dataset demonstrating data engineering skills
+
+dataset:
+  name: "home_credit"
+  path: "data/raw/home_credit"
+  target_col: "TARGET"
+  
+  # Tables to load (relative to path)
+  tables:
+    - "application_train.csv"
+    - "bureau.csv"
+    - "bureau_balance.csv"
+    - "previous_application.csv"
+    - "POS_CASH_balance.csv"
+    - "credit_card_balance.csv"
+    - "installments_payments.csv"
+
+triage:
+  # More aggressive for "unbanked" population (harder to predict)
+  auto_approve_threshold: 0.03
+  auto_decline_threshold: 0.60
+  
+  # Target metrics
+  max_pass_defect_rate: 0.02
+  
+split:
+  strategy: "stratified"
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+
+model:
+  type: "xgboost"
+  calibration: "isotonic"
+  
+  # Larger model for complex feature space
+  hyperparameters:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.6
+    min_child_weight: 10
+    
+  # Handle high cardinality categoricals
+  categorical_encoding: "target"

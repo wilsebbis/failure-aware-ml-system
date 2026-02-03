@@ -29,37 +29,62 @@ uv run python -c "import src; print('✓ Installation successful')"
 
 ## Run the Pipeline
 
+### Default (UCI Credit)
+
 ```bash
 uv run python -m src.main
 ```
 
-Expected output:
+### With Other Datasets
+
+```bash
+# Download professional datasets (requires Kaggle API)
+python scripts/download_data.py --dataset all
+
+# Run with Home Credit (7-table joins)
+uv run python -m src.main --dataset home_credit
+
+# Run with IEEE-CIS (temporal splits)
+uv run python -m src.main --dataset ieee_cis
+
+# Run with Lending Club (IRR optimization)
+uv run python -m src.main --dataset lending_club
+```
+
+### Expected Output
+
 ```
 ============================================================
 FAILURE-AWARE ML SYSTEM PIPELINE
+Dataset: uci_credit
 ============================================================
 
-[1/7] Loading data...
-  Loaded data: 30000 rows, 24 columns
-  Target distribution: {0: 0.78, 1: 0.22}
+[1/7] Loading data via adapter...
+  Loaded 30,000 samples with 23 features
+  Target rate: 22.12%
+  Split strategy: stratified
 
 [2/7] Splitting data...
-  Train: 21000 samples, 22.12% positive
+  Using stratified split (train: 21000, val: 3000, test: 6000)
 
 [3/7] Training models...
   Logistic Regression trained
-  Random Forest trained (OOB: 0.77)
+  Random Forest trained
   XGBoost trained
 
 [4/7] Evaluating models...
-  Best model by recall: XGBoost (31.4%)
+  Best model by recall: XGBoost
 
 [5/7] Optimizing thresholds...
+  Pass threshold: p < 0.05
+  Flag threshold: p >= 0.50
 
 [6/7] Applying triage policy...
-  Pass rate: 46.8%
-  Flag rate: 7.2%
-  Review rate: 46.0%
+  Pass rate: 18.0%
+  Flag rate: 14.0%
+  Review rate: 68.0%
+  Pass Queue Defect Rate: 1.80%
+  System Recall: 98.2%
 
 [7/7] Testing distribution shift...
   ✓ No confidence collapse

@@ -118,7 +118,6 @@ class XGBoostModel:
             scale_pos_weight=self.scale_pos_weight,
             random_state=self.random_state,
             eval_metric=xgb_config.eval_metric,
-            use_label_encoder=False,
             n_jobs=-1
         )
         

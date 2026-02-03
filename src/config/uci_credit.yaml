@@ -1,0 +1,32 @@
+# UCI Credit Card Dataset Configuration
+# Simple single-CSV dataset for testing and demonstration
+
+dataset:
+  name: "uci_credit"
+  path: "data/raw/UCI_Credit_Card.csv"
+  target_col: "default.payment.next.month"
+
+triage:
+  # Aggressive PASS threshold for Safety First calibration
+  auto_approve_threshold: 0.05
+  auto_decline_threshold: 0.50
+  
+  # Target metrics
+  max_pass_defect_rate: 0.02  # Max 2% defaults in PASS queue
+  
+split:
+  strategy: "stratified"
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+
+model:
+  type: "xgboost"
+  calibration: "isotonic"
+  
+  hyperparameters:
+    n_estimators: 200
+    max_depth: 5
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8

@@ -1,0 +1,40 @@
+# IEEE-CIS Fraud Detection Configuration
+# Temporal dataset demonstrating ML Ops skills
+
+dataset:
+  name: "ieee_cis"
+  path: "data/raw/ieee_cis"
+  target_col: "isFraud"
+  temporal_col: "TransactionDT"
+  
+  # Time split ratio (first 80% for train, last 20% for test)
+  train_time_ratio: 0.8
+
+triage:
+  # Fraud detection: very aggressive PASS threshold
+  auto_approve_threshold: 0.02
+  auto_decline_threshold: 0.30  # Lower threshold for fraud
+  
+  # Target metrics
+  max_pass_defect_rate: 0.005  # Only 0.5% fraud in PASS queue
+  
+split:
+  # CRITICAL: Must use temporal split, NOT random
+  strategy: "temporal"
+  validation_ratio: 0.1  # Last 10% of training as validation
+
+model:
+  type: "xgboost"
+  calibration: "isotonic"
+  
+  # Handle imbalanced fraud data
+  hyperparameters:
+    n_estimators: 300
+    max_depth: 7
+    learning_rate: 0.05
+    subsample: 0.7
+    colsample_bytree: 0.5
+    scale_pos_weight: 20  # ~5% fraud rate
+    
+  # Dense V-features benefit from more trees
+  early_stopping_rounds: 50

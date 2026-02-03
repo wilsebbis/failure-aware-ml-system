@@ -79,7 +79,7 @@ def stratified_split(
 def create_shifted_test_set(
     X_test: pd.DataFrame,
     y_test: pd.Series,
-    shift_feature: str = "LIMIT_BAL",
+    shift_feature: str = None,
     shift_percentile: float = 0.75,
     random_state: int = None
 ) -> tuple[pd.DataFrame, pd.Series]:
@@ -92,7 +92,7 @@ def create_shifted_test_set(
     Args:
         X_test: Original test features
         y_test: Original test target
-        shift_feature: Feature to shift on
+        shift_feature: Feature to shift on (auto-detected if None)
         shift_percentile: Keep samples above this percentile
         random_state: Random seed
         
@@ -100,6 +100,22 @@ def create_shifted_test_set(
         Tuple of (shifted X, shifted y)
     """
     random_state = random_state or data_config.random_state
+    
+    # Auto-detect shift feature if not specified or not in columns
+    if shift_feature is None or shift_feature not in X_test.columns:
+        # Find a suitable numeric column to shift on
+        numeric_cols = X_test.select_dtypes(include=[np.number]).columns.tolist()
+        if not numeric_cols:
+            logger.warning("No numeric columns found for shift test, skipping")
+            return X_test.copy(), y_test.copy()
+        
+        # Pick a column with good variance (not all zeros)
+        for col in numeric_cols:
+            if X_test[col].std() > 0:
+                shift_feature = col
+                break
+        else:
+            shift_feature = numeric_cols[0]
     
     # Find threshold
     threshold = X_test[shift_feature].quantile(shift_percentile)
